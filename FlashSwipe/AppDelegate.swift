@@ -10,26 +10,54 @@ import UIKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
-
     var window: UIWindow?
-    
-    enum Actions:String{
-        case increment = "INCREMENT_ACTION"
-        case decrement = "DECREMENT_ACTION"
-        case reset = "RESET_ACTION"
-    }
 
+    func createNotificationAction() -> UIMutableUserNotificationAction {
+        let action = UIMutableUserNotificationAction()
+        action.identifier = "ANSWER_ACTION"
+        action.title = "どれくらい長い文章が書けるものだろうか?"
+        action.activationMode = UIUserNotificationActivationMode.Background
+        action.authenticationRequired = true
+        action.destructive = false
+        return action
+    }
+    
+    func createNotificationCategory(action: UIMutableUserNotificationAction) -> UIMutableUserNotificationCategory {
+        let category = UIMutableUserNotificationCategory()
+        category.identifier = "ANSWER"
+        category.setActions([action], forContext: UIUserNotificationActionContext.Default)
+        category.setActions([action], forContext: UIUserNotificationActionContext.Minimal)
+        return category
+    }
+    
+    func registerNotification(action: UIMutableUserNotificationAction, category: UIMutableUserNotificationCategory) {
+        let types : UIUserNotificationType = [UIUserNotificationType.Alert, UIUserNotificationType.Sound]
+        let settings = UIUserNotificationSettings(forTypes: types, categories: NSSet(object: category) as? Set<UIUserNotificationCategory>)
+        UIApplication.sharedApplication().registerUserNotificationSettings(settings)
+    }
+    
+    func scheduleNotification(category: UIMutableUserNotificationCategory) {
+        UIApplication.sharedApplication().cancelAllLocalNotifications()
+        if UIApplication.sharedApplication().scheduledLocalNotifications!.count == 0 {
+            let notification = UILocalNotification()
+            notification.alertBody = "Flash Card"
+            notification.soundName = UILocalNotificationDefaultSoundName
+            notification.fireDate = NSDate()
+            notification.category = category.identifier
+            notification.repeatInterval = NSCalendarUnit.Minute
+            
+            UIApplication.sharedApplication().scheduleLocalNotification(notification)
+        }
+    }
+    
     func setupNotification() {
-        let answerAction = UIMutableUserNotificationAction()
-        answerAction.identifier = Actions.increment.rawValue
-        answerAction.title = "どれくらい長い文章が書けるものだろうか?"
-        answerAction.activationMode = UIUserNotificationActivationMode.Background
-        answerAction.authenticationRequired = true
-        answerAction.destructive = false
+        let action = createNotificationAction()
+        let category = createNotificationCategory(action)
+        registerNotification(action, category:category)
+        scheduleNotification(category)
     }
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
-        // Override point for customization after application launch.
         setupNotification()
         return true
     }
